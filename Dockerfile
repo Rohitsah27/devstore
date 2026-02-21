@@ -13,10 +13,6 @@ RUN apt-get update && apt-get install -y \
     dos2unix \
     && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip opcache
 
-# Install Node.js and npm (using Node 20 LTS)
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
-    && apt-get install -y nodejs
-
 # Clear cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
@@ -29,13 +25,11 @@ WORKDIR /var/www/html
 # Copy existing application directory contents
 COPY . /var/www/html
 
+# Copy custom vhost config
+COPY docker/vhost.conf /etc/apache2/sites-available/000-default.conf
+
 # Set permissions for storage and bootstrap/cache
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
-
-# Configure Apache DocumentRoot to point to public folder
-ENV APACHE_DOCUMENT_ROOT /var/www/html/public
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
-RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf
 
 # Enable Apache mod_rewrite
 RUN a2enmod rewrite
@@ -43,12 +37,8 @@ RUN a2enmod rewrite
 # Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader
 
-# Install JS dependencies and build assets
-RUN npm install && npm run build
-
 # Make entrypoint script executable
-RUN dos2unix docker/entrypoint.sh
-RUN chmod +x docker/entrypoint.sh
+RUN dos2unix docker/entrypoint.sh && chmod +x docker/entrypoint.sh
 
 # Expose port (Render sets PORT env var, usually 10000)
 EXPOSE 80 10000

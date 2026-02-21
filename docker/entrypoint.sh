@@ -3,7 +3,8 @@ set -e
 
 # Use the PORT environment variable in Apache configuration
 if [ -n "$PORT" ]; then
-    sed -i "s/80/$PORT/g" /etc/apache2/sites-available/000-default.conf /etc/apache2/ports.conf
+    sed -i "s/80/$PORT/g" /etc/apache2/sites-available/000-default.conf
+    sed -i "s/80/$PORT/g" /etc/apache2/ports.conf
 fi
 
 # Run database migrations (optional, uncomment if needed)
